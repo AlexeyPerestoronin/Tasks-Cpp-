@@ -3,7 +3,6 @@ from pathlib import Path
 from invoke import task, Collection
 
 import setup
-import leet_code
 from utils.logger import INFO
 from utils.command_executor import CommandExecutor
 
@@ -57,4 +56,7 @@ def yapf(ctx):
 namespace = Collection()
 namespace.add_task(get_info, name="get-info")
 namespace.add_task(yapf, name="yapf")
+
+import leet_code
+
 namespace.add_collection(leet_code.collection)

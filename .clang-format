@@ -1,6 +1,6 @@
 # Note: let's keep the options sorted in alphabetical order.
 
-AccessModifierOffset: 4
+AccessModifierOffset: 0
 AlignAfterOpenBracket: true
 AlignConsecutiveAssignments: false
 AlignEscapedNewlinesLeft: true

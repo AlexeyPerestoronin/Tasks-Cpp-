@@ -4,12 +4,14 @@ __pycache__
 .venv
 .cache
 .vscode
+.build*
+.cache*
 
 # Fuzz
 .generated
 
-# CMake
-build
+# Conan
+CMakeUserPresets.json
 
 # User
 note.md
