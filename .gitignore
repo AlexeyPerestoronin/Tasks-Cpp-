@@ -1,0 +1,17 @@
+# IDE
+__pycache__
+.qodo
+.venv
+.cache
+.vscode
+
+# Fuzz
+.generated
+
+# CMake
+build
+
+# User
+note.md
+TODO.md
+
