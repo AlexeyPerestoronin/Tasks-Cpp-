@@ -10,6 +10,18 @@ from utils.logger import INFO, print_task_documentation
 
 @task(pre=[setup.setup_context])
 @print_task_documentation
+def detect_profile(ctx):
+    """
+    Detect Conan's profile
+    """
+    CommandExecutor(ctx)\
+        .add_cwd(f"{ctx.leet_code_conan_dir}")\
+        .add_command([f'conan profile detect'])\
+        .execute("leet_code-conan.profile_detect.log")
+
+
+@task(pre=[setup.setup_context])
+@print_task_documentation
 def clean(ctx):
     """
     Clean Conan's data for LeetCode
@@ -55,5 +67,6 @@ def install(ctx, debug=True):
 
 
 collection = Collection("conan")
+collection.add_task(detect_profile, name="detect-profile")
 collection.add_task(clean, name="clean")
 collection.add_task(install, name="install")
