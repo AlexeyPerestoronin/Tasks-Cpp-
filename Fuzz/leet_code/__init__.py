@@ -150,12 +150,13 @@ def launch(ctx, debug=True, target=".+", gtest_filter="*"):
 @task(
     pre=[setup.setup_context],
     help={
-        "debug": "if set build type will be DEBUG, else RELEASE (by default DEBUG)",
         "clean": "should clean all temporary files before checking",
+        "debug": "if set build type will be DEBUG, else RELEASE (by default DEBUG)",
+        "target": 'defines regexpr-name of target to launch (by default ".+")',
     },
 )
 @print_task_documentation
-def full_check(ctx, debug=True, clean=False):
+def full_check(ctx, clean=False, debug=True, target=".+"):
     """
     Full-check LeetCode-project
     """
@@ -166,7 +167,7 @@ def full_check(ctx, debug=True, clean=False):
     leet_code.conan.install(ctx, debug=debug)
     leet_code.configure(ctx, debug=debug)
     leet_code.build(ctx, debug=debug)
-    leet_code.launch(ctx, debug=debug)
+    leet_code.launch(ctx, debug=debug, target=target)
 
 
 collection = Collection("leet_code")
