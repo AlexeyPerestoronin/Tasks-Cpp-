@@ -41,16 +41,14 @@ def install(ctx, debug=True):
     build_type = "Debug" if debug else "Release"
 
     command = [
-        activate_VS2022_environment(),
-        [
-            f'conan install .',
-            f'^\n  --profile conanprofile.txt',
-            f'^\n  --build=missing',
-            f'^\n  --settings=build_type={build_type}',
-            f'^\n  --core-conf=core.cache:storage_path="{ctx.leet_code_conan_dir}/.cache_{build_type}"',
-            f'^\n  --core-conf=core.download:parallel=8',
-            f'^\n  --output-folder="{ctx.leet_code_conan_dir}/.build_{build_type}"',
-        ],
+        f'conan install .',
+        f'^\n  --profile conanprofile.txt',
+        f'^\n  --build=missing',
+        f'^\n  --settings=build_type={build_type}',
+        f'^\n  --settings=compiler.runtime_type={build_type}',
+        f'^\n  --core-conf=core.cache:storage_path="{ctx.leet_code_conan_dir}/.cache_{build_type}"',
+        f'^\n  --core-conf=core.download:parallel=8',
+        f'^\n  --output-folder="{ctx.leet_code_conan_dir}/.build_{build_type}"',
     ]
 
     CommandExecutor(ctx).execute(command, cwd=f"{ctx.leet_code_conan_dir}", log="leet_code-conan.install.log")

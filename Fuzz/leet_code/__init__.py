@@ -74,12 +74,11 @@ def configure(ctx, debug=True):
         activate_VS2022_environment(),
         [
             f'cmake',
-            f'^\n  -DCMAKE_C_COMPILER=msvc',
-            f'^\n  -DCMAKE_CXX_COMPILER=msvc',
+            f'^\n  -DCMAKE_CXX_COMPILER=clang-cl.exe',
+            f'^\n  -DCMAKE_C_COMPILER=clang-cl.exe',
             f'^\n  -DCMAKE_BUILD_TYPE={build_type}',
-            f'^\n  -DCMAKE_TOOLCHAIN_FILE="{ctx.leet_code_conan_dir}/.build_{build_type}/build/generators/conan_toolchain.cmake"',
-            f'^\n  -G "Visual Studio 17 2022"',
-            f'^\n  -A x64',
+            f'^\n  -GNinja',
+            f'^\n  -DCMAKE_TOOLCHAIN_FILE="{ctx.leet_code_conan_dir}/.build_{build_type}/build/{build_type}/generators/conan_toolchain.cmake"',
             f'^\n  -S "{ctx.leet_code_dir}"',
             f'^\n  -B "{ctx.leet_code_cmake_dir}/.build_{build_type}"',
         ],
@@ -107,15 +106,13 @@ def build(ctx, debug=True, target="all", jobs=8):
     command = [
         activate_VS2022_environment(),
         [
-            f'cmake',
-            f'^\n  --build "{ctx.leet_code_cmake_dir}/.build_{build_type}"',
-            f'^\n  --config {build_type}',
-            f'^\n  --target {target}' if target != 'all' else None,
-            f'^\n  --parallel {jobs}',
+            f'ninja',
+            f'^\n  -j {jobs}',
+            f'^\n  {target}',
         ],
     ]
 
-    CommandExecutor(ctx).execute(command, log="leet_code.build.log")
+    CommandExecutor(ctx).execute(command, cwd=f"{ctx.leet_code_cmake_dir}/.build_{build_type}", log="leet_code.build.log")
 
 
 @task(
@@ -133,8 +130,7 @@ def launch(ctx, debug=True, target=".+", gtest_filter="*"):
     """
 
     build_type = "Debug" if debug else "Release"
-    build_dir = f"{ctx.leet_code_cmake_dir}/.build_{build_type}"
-    targets_dir = f"{build_dir}/{build_type}"
+    targets_dir = f"{ctx.leet_code_cmake_dir}/.build_{build_type}"
 
     command = []
     for item in os.listdir(f"{targets_dir}"):

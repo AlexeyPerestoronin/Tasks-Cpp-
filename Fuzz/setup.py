@@ -27,7 +27,6 @@ def get_env_context():
 
         return value
 
-
     # work-spaces
     fuzz_dir = setup_dir_via_env("FUZZ_DIR", f"{__file__}/../")
     git_dir = setup_dir_via_env("GIT_DIR", f"{fuzz_dir}/..")
@@ -39,21 +38,18 @@ def get_env_context():
 
     if os.name == "nt":
         context["Env"].append("PATH")
-        context["Val"].append(";".join(
-            [
-                "C:/Program Files/Conan/conan",
-                "C:/Program Files/CMake/bin",
-                "C:/Program Files/LLVM/bin",
-                "%PATH%",
-            ]
-        ))
+        context["Val"].append(";".join([
+            "C:/Program Files/Conan/conan",
+            "C:/Program Files/CMake/bin",
+            "C:/Program Files/LLVM/bin",
+            "C:/ProgramData/chocolatey/lib/ninja/tools",
+            "%PATH%",
+        ]))
     elif os.name == "posix":
         context["Env"].append("PATH")
-        context["Val"].append(":".join(
-            [
-                "$PATH$",
-            ]
-        ))
+        context["Val"].append(":".join([
+            "$PATH$",
+        ]))
     else:
         raise Exception("unsupported operation system!")
 

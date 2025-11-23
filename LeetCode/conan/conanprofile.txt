@@ -1,11 +1,14 @@
 [settings]
 os=Windows
 arch=x86_64
-compiler=msvc
+compiler=clang
+compiler.version=21
 compiler.cppstd=17
-compiler.version=194
 compiler.runtime=static
-compiler.runtime_type=Release
+compiler.runtime_version=v144
+
+[conf]
+tools.cmake.cmaketoolchain:generator = Ninja
 
 [options]
 gtest/1.17.0:shared=False
