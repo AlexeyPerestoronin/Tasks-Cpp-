@@ -53,7 +53,14 @@ class Solution {
     public:
     int findPoisonedDuration(std::vector<int>& timeSeries, int duration) {
         // implement solution here
-        return 0;
+        int result = duration;
+        for (int i = 0; i < timeSeries.size() - 1; ++i) {
+            if (timeSeries[i] + duration > timeSeries[i + 1])
+                result += timeSeries[i + 1] - timeSeries[i];
+            else
+                result += duration;
+        }
+        return result;
     }
 };
 

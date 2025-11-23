@@ -5,7 +5,6 @@ from invoke import Collection, task
 
 import setup
 from utils.command_executor import CommandExecutor
-from utils.windows.environment_utils import activate_VS2022_environment
 from utils.logger import INFO, print_task_documentation
 
 
@@ -40,18 +39,19 @@ def install(ctx, debug=True):
 
     build_type = "Debug" if debug else "Release"
 
-    command = [
-        f'conan install .',
-        f'^\n  --profile conanprofile.txt',
-        f'^\n  --build=missing',
-        f'^\n  --settings=build_type={build_type}',
-        f'^\n  --settings=compiler.runtime_type={build_type}',
-        f'^\n  --core-conf=core.cache:storage_path="{ctx.leet_code_conan_dir}/.cache_{build_type}"',
-        f'^\n  --core-conf=core.download:parallel=8',
-        f'^\n  --output-folder="{ctx.leet_code_conan_dir}/.build_{build_type}"',
-    ]
-
-    CommandExecutor(ctx).execute(command, cwd=f"{ctx.leet_code_conan_dir}", log="leet_code-conan.install.log")
+    CommandExecutor(ctx)\
+        .add_cwd(f"{ctx.leet_code_conan_dir}")\
+        .add_command([
+            f'conan install .',
+            f'--profile conanprofile.txt',
+            f'--build=missing',
+            f'--settings=build_type={build_type}',
+            f'--settings=compiler.runtime_type={build_type}',
+            f'--core-conf=core.cache:storage_path="{ctx.leet_code_conan_dir}/.cache_{build_type}"',
+            f'--core-conf=core.download:parallel=8',
+            f'--output-folder="{ctx.leet_code_conan_dir}/.build_{build_type}"',
+        ])\
+        .execute("leet_code-conan.install.log")
 
 
 collection = Collection("conan")

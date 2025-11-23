@@ -29,28 +29,29 @@ def yapf(ctx):
     """
     Format python files in Fuzz
     """
-    files = []
-    dirs = []
-    for item in os.listdir(f"{ctx.fuzz_dir}"):
-        item = Path(os.path.join(f"{ctx.fuzz_dir}", item))
-        if item.is_file():
-            if item.name.endswith('.py'):
-                files.append(f'"{item.as_posix()}"')
-        elif item.is_dir():
-            if not item.name.startswith('.'):
-                dirs.append(f'"{item.as_posix()}"')
 
-    command = [
-        "yapf",
-        "--style .style.yapf",
-        "--verbose",
-        "--in-place",
-        "--recursive",
-        " ".join(dirs),
-        " ".join(files),
-    ]
+    def collect_file(dir):
+        files = []
+        for item in os.listdir(dir):
+            item = Path(os.path.join(f'{dir}', item))
+            if item.is_file():
+                if item.name.endswith('.py'):
+                    files.append(f'"{item.as_posix()}"')
+            elif item.is_dir():
+                if not item.name.startswith('.'):
+                    files.extend(collect_file(f'{item.as_posix()}'))
+        return files
 
-    CommandExecutor(ctx).execute(command, cwd=f"{ctx.fuzz_dir}", log="yapf.log")
+    CommandExecutor(ctx)\
+        .add_cwd(f"{ctx.fuzz_dir}")\
+        .add_command([
+                "yapf",
+                "--style .style.yapf",
+                "--verbose",
+                "--in-place",
+                *collect_file(f"{ctx.fuzz_dir}")
+            ])\
+        .execute(log="yapf.log")
 
 
 namespace = Collection()

@@ -15,28 +15,28 @@ def clang_format(ctx):
     """
     Format h/cpp files in LeetCode 
     """
-    files = []
 
     def collect_file(dir):
+        files = []
         for item in os.listdir(f"{dir}"):
             item = Path(os.path.join(f"{dir}", item))
             if item.is_file():
                 if item.name.endswith('.h') or item.name.endswith('.cpp'):
                     files.append(f'"{item.as_posix()}"')
             if item.is_dir():
-                collect_file(f"{item}")
+                files.extend(collect_file(f"{item}"))
+        return files
 
-    collect_file(f'{ctx.leet_code_dir}/src')
-
-    command = [
-        "clang-format",
-        f'^\n  -i',
-        f'^\n  --verbose',
-        f'^\n  --style="file:{ctx.git_dir}/.clang-format" ^\n ',
-        " ^\n  ".join(files),
-    ]
-
-    CommandExecutor(ctx).execute(command, log="clang-format.log")
+    CommandExecutor(ctx)\
+        .add_command([
+                "clang-format",
+                f'-i',
+                f'--verbose',
+                f'--style="file:{ctx.git_dir}/.clang-format"',
+                *collect_file(f'{ctx.leet_code_dir}/src'),
+            ]
+        )\
+        .execute(log="leet_code.clang-format.log")
 
 
 @task(pre=[setup.setup_context])
@@ -70,21 +70,18 @@ def configure(ctx, debug=True):
 
     build_type = "Debug" if debug else "Release"
 
-    command = [
-        activate_VS2022_environment(),
-        [
-            f'cmake',
-            f'^\n  -DCMAKE_CXX_COMPILER=clang-cl.exe',
-            f'^\n  -DCMAKE_C_COMPILER=clang-cl.exe',
-            f'^\n  -DCMAKE_BUILD_TYPE={build_type}',
-            f'^\n  -GNinja',
-            f'^\n  -DCMAKE_TOOLCHAIN_FILE="{ctx.leet_code_conan_dir}/.build_{build_type}/build/{build_type}/generators/conan_toolchain.cmake"',
-            f'^\n  -S "{ctx.leet_code_dir}"',
-            f'^\n  -B "{ctx.leet_code_cmake_dir}/.build_{build_type}"',
-        ],
-    ]
-
-    CommandExecutor(ctx).execute(command, log="leet_code.configure.log")
+    CommandExecutor(ctx)\
+        .add_command([
+                f'cmake',
+                f'-DCMAKE_CXX_COMPILER=clang-cl.exe',
+                f'-DCMAKE_C_COMPILER=clang-cl.exe',
+                f'-DCMAKE_BUILD_TYPE={build_type}',
+                f'-GNinja',
+                f'-DCMAKE_TOOLCHAIN_FILE="{ctx.leet_code_conan_dir}/.build_{build_type}/build/{build_type}/generators/conan_toolchain.cmake"',
+                f'-S "{ctx.leet_code_dir}"',
+                f'-B "{ctx.leet_code_cmake_dir}/.build_{build_type}"',
+            ])\
+        .execute(log="leet_code.configure.log")
 
 
 @task(
@@ -103,16 +100,14 @@ def build(ctx, debug=True, target="all", jobs=8):
 
     build_type = "Debug" if debug else "Release"
 
-    command = [
-        activate_VS2022_environment(),
-        [
+    CommandExecutor(ctx)\
+        .add_cwd(f"{ctx.leet_code_cmake_dir}/.build_{build_type}")\
+        .add_command([
             f'ninja',
-            f'^\n  -j {jobs}',
-            f'^\n  {target}',
-        ],
-    ]
-
-    CommandExecutor(ctx).execute(command, cwd=f"{ctx.leet_code_cmake_dir}/.build_{build_type}", log="leet_code.build.log")
+            f'-j {jobs}',
+            f'{target}',
+        ], enter=False)\
+        .execute(log="leet_code.build.log")
 
 
 @task(
@@ -132,19 +127,19 @@ def launch(ctx, debug=True, target=".+", gtest_filter="*"):
     build_type = "Debug" if debug else "Release"
     targets_dir = f"{ctx.leet_code_cmake_dir}/.build_{build_type}"
 
-    command = []
+    commands = []
     for item in os.listdir(f"{targets_dir}"):
         item = Path(os.path.join(f"{targets_dir}", item))
         if item.is_file():
             if item.name.endswith('.exe'):
                 if re.match(target, item.name):
                     INFO.log_line(f'detected by "{target}": {item.name}')
-                    command.append([
-                        f'{item.name}',
-                        f'--gtest_filter="{gtest_filter}"',
-                    ])
+                    commands.append([f'{item.name} --gtest_filter="{gtest_filter}"'])
 
-    CommandExecutor(ctx).execute(command, cwd=f"{targets_dir}", log="leet_code.launch.log")
+    CommandExecutor(ctx)\
+        .add_cwd(f"{targets_dir}")\
+        .add_commands(commands)\
+        .execute("leet_code.launch.log")
 
 
 @task(
@@ -164,6 +159,7 @@ def full_check(ctx, clean=False, debug=True, target=".+"):
         leet_code.conan.clean(ctx)
         leet_code.clean(ctx)
 
+    leet_code.clang_format(ctx)
     leet_code.conan.install(ctx, debug=debug)
     leet_code.configure(ctx, debug=debug)
     leet_code.build(ctx, debug=debug)

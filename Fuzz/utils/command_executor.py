@@ -22,16 +22,49 @@ class CommandExecutor:
     """
 
     def __init__(self, ctx):
-        self._log_dir = ctx.current_instance_log
-        self._execute_created_script = ctx.config.run_time.execute_created_script
+        self.__log_dir = ctx.current_instance_log
+        self.__execute_created_script_execute_created_script = ctx.config.run_time.execute_created_script
         pathlib.Path(ctx.current_instance_log).mkdir(parents=True, exist_ok=True)
-        self._executor = ScriptExecutor()
+        self.__executor = ScriptExecutor()
+        self.__cwd = None
+        self.__env = None
+        self.__commands = []
 
-    def execute(self, command: list, *, cwd: str = None, env: dict = None, log: str = None):
-        log_path = pathlib.Path(f"{self._log_dir}/{log}")
-        [process_handler, script_path] = self._executor.get_execute_process_handler(validate_commands(command), cwd=cwd, env=env, log_path=log_path)
+    def add_cwd(self, cwd: str):
+        self.__cwd = cwd
+        return self
 
-        if self._execute_created_script == False:
+    def add_env(self, env: dict):
+        self.__env = env
+        return self
+
+    def add_command(self, command: list, *, enter=True, offset=True):
+        offset = "    " if enter and offset else ""
+        if os.name == "nt":
+            enter = "^\n" if enter else ""
+        elif os.name == "posix":
+            enter = " \\\n" if enter else ""
+        else:
+            raise Exception("unsupported operation system!")
+
+        if command:
+            clean_command = [command_line for command_line in command if command_line is not None]
+            format_command = [clean_command[0]]
+            for command_line in clean_command[1:]:
+                format_command.append(f"{enter}{offset}{command_line}")
+            self.__commands.append(format_command)
+        return self
+
+    def add_commands(self, commands: list, *, enter=True, offset=True):
+        for command in commands:
+            self.add_command(command, enter=enter, offset=offset)
+        return self
+
+    def execute(self, log: str = None):
+        log_path = pathlib.Path(f"{self.__log_dir}/{log}")
+        [process_handler, script_path] = self.__executor.get_execute_process_handler(self.__commands, cwd=self.__cwd, env=self.__env, log_path=log_path)
+
+        if self.__execute_created_script_execute_created_script == False:
             STATUS \
                 .log_line("\nWithout execution:") \
                 .log_line(f"Command script file: {script_path}")
@@ -81,19 +114,3 @@ class CommandExecutor:
         else:
             ERROR.log_line(f"Command failed: return code {return_code}.")
             raise Exception("command execution error!")
-
-
-def is_list_of_lists(obj):
-    return isinstance(obj, list) and all(isinstance(x, list) for x in obj)
-
-
-def validate_commands(commands):
-    clean_command = [cmd for cmd in commands if cmd is not None]
-    # If command is a flat list, wrap it in another list
-    single_command = isinstance(clean_command, list) and (not is_list_of_lists(clean_command))
-    clean_commands = []
-    for cmd in [clean_command] if single_command else clean_command:
-        # remove all None elements from command
-        clean_cmd = [x for x in cmd if x is not None]
-        clean_commands.append(clean_cmd)
-    return clean_commands
