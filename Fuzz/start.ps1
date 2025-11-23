@@ -17,10 +17,24 @@ function Install-Chocolatey {
 }
 
 # Function to check if a Chocolatey package is installed
-function Is-PackageInstalled {
+function Choco-IsPackageInstalled {
     param([string]$packageName)
     $list = choco list --exact $packageName 2>$null
     return $list -match "^$packageName"
+}
+
+
+# Function to install a missing Chocolatey package
+function Choco-InstallPackage {
+    param([string]$packageName)
+    Write-Host "Launching elevated console to install $packageName..."
+    $args = "-NoProfile -ExecutionPolicy Bypass -Command `"choco install $packageName -y --no-progress`""
+    $proc = Start-Process -FilePath "powershell.exe" -ArgumentList $args -Verb RunAs -PassThru
+    $proc.WaitForExit()
+    if ($proc.ExitCode -ne 0) {
+        Write-Error "Failed to install $package via Chocolatey in elevated console. Exiting."
+        exit 1
+    }
 }
 
 # Ensure Chocolatey is installed before checking packages
@@ -35,37 +49,18 @@ if (-not (Is-ChocolateyInstalled)) {
 }
 
 # Required packages
-$requiredPackages = @("llvm", "python3")
-# Check for missing packages
-$missingPackages = @()
-
-foreach ($pkg in $requiredPackages) {
-    if (-not (Is-PackageInstalled $pkg)) {
-        $missingPackages += $pkg
+$requiredPackages = @("llvm", "python3", "conan", "cmake", "ninja")
+foreach ($packageName in $requiredPackages) {
+    if (-not (Choco-IsPackageInstalled $packageName)) {
+        Choco-InstallPackage $packageName
     } else {
-        Write-Host "$pkg is already installed."
+        Write-Host "$packageName is already installed."
     }
 }
 
-# If missing packages exist, check for admin rights and relaunch script if needed
-if ($missingPackages.Count -gt 0) {
-    Write-Host "Missing packages detected: $($missingPackages -join ', '). Launching elevated consoles to install each package..."
-    foreach ($package in $missingPackages) {
-        Write-Host "Launching elevated console to install $package..."
-        $args = "-NoProfile -ExecutionPolicy Bypass -Command `"choco install $package -y --no-progress`""
-        $proc = Start-Process -FilePath "powershell.exe" -ArgumentList $args -Verb RunAs -PassThru
-        $proc.WaitForExit()
-        if ($proc.ExitCode -ne 0) {
-            Write-Error "Failed to install $package via Chocolatey in elevated console. Exiting."
-            exit 1
-        }
-    }
+# Refresh environment variables for this session
+Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
 
-    # Refresh environment variables for this session
-    & refreshenv
-} else {
-    Write-Host "All required packages are installed."
-}
 
 # Check if Python and pip are available
 try {

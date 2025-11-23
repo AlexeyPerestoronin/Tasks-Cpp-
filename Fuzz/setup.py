@@ -27,6 +27,7 @@ def get_env_context():
 
         return value
 
+
     # work-spaces
     fuzz_dir = setup_dir_via_env("FUZZ_DIR", f"{__file__}/../")
     git_dir = setup_dir_via_env("GIT_DIR", f"{fuzz_dir}/..")
@@ -34,8 +35,27 @@ def get_env_context():
     leet_code_dir = setup_dir_via_env("LEET_CODE_DIR", f"{git_dir}/LeetCode")
     setup_dir_via_env("LEET_CODE_CONAN_DIR", f"{leet_code_dir}/conan")
     setup_dir_via_env("LEET_CODE_CMAKE_DIR", f"{leet_code_dir}/cmake")
-
     # add here additional env-variables which will be available via ctx (context) on each task
+
+    if os.name == "nt":
+        context["Env"].append("PATH")
+        context["Val"].append(";".join(
+            [
+                "C:/Program Files/Conan/conan",
+                "C:/Program Files/CMake/bin",
+                "C:/Program Files/LLVM/bin",
+                "%PATH%",
+            ]
+        ))
+    elif os.name == "posix":
+        context["Env"].append("PATH")
+        context["Val"].append(":".join(
+            [
+                "$PATH$",
+            ]
+        ))
+    else:
+        raise Exception("unsupported operation system!")
 
     return pandas.DataFrame(context)
 
@@ -47,7 +67,6 @@ def setup_context(ctx):
     """
 
     context = get_env_context()
-
     for _idx, row in context.iterrows():
         attr_name = str(row["Env"]).lower()
         attr_value = str(row["Val"])
