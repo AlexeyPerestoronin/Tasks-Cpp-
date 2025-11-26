@@ -7,7 +7,6 @@ from invoke import Collection, task
 import setup
 from utils.logger import INFO, print_task_documentation
 from utils.command_executor import CommandExecutor
-from utils.windows.environment_utils import activate_VS2022_environment
 
 
 @task(pre=[setup.setup_context])
