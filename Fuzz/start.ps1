@@ -49,7 +49,13 @@ if (-not (Is-ChocolateyInstalled)) {
 }
 
 # Required packages
-$requiredPackages = @("llvm", "python3", "conan", "cmake", "ninja")
+$requiredPackages = @(
+    "python3",  # Python language interpreter for using invoke via Fuzz
+    "llvm",     # C/C++ language tools for building
+    "conan",    # C/C++ package manager
+    "cmake",    # C/C++ configure tool
+    "ninja"     # C/C++ building manager tools (generator)
+)
 foreach ($packageName in $requiredPackages) {
     if (-not (Choco-IsPackageInstalled $packageName)) {
         Choco-InstallPackage $packageName
