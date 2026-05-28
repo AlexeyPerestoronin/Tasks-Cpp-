@@ -8,6 +8,7 @@ compiler.runtime=static
 compiler.runtime_version=v144
 
 [conf]
+tools.build:jobs=8
 tools.cmake.cmaketoolchain:generator = Ninja
 
 [options]

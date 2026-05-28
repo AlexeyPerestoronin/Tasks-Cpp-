@@ -1,15 +1,15 @@
 import os
 import re
-import setup
 import shutil
-import invoke
 import commandscript
 
-@commandscript.script_task(pre=[setup.setup_context])
+
+@commandscript.script_task()
 def clean(ctx):
     """
     Clean Conan's data for LeetCode
     """
+    # TODO: need to revise on Windows
     for item in os.listdir(f"{ctx.leet_code_cmake_dir}"):
         item = Path(os.path.join(f"{ctx.leet_code_cmake_dir}", item))
         if item.is_dir():
@@ -22,16 +22,14 @@ def clean(ctx):
 
 
 @commandscript.script_task(
-    pre=[setup.setup_context],
     help={
         "debug": "if set configuration type will be DEBUG (else RELEASE)",
-    },
-)
+    }, )
 def configure(ctx, debug=True):
     """
     Configure LeetCode-project
     """
-
+    # TODO: need to revise on Windows
     build_type = "Debug" if debug else "Release"
 
     CommandExecutor(ctx)\
@@ -49,18 +47,16 @@ def configure(ctx, debug=True):
 
 
 @commandscript.script_task(
-    pre=[setup.setup_context],
     help={
         "debug": "if set build type will be DEBUG, else RELEASE (by default DEBUG)",
         "target": "defines name of target to build (by default ALL)",
         "jobs": "defines count parallel buildings (by default 8)",
-    },
-)
+    }, )
 def build(ctx, debug=True, target="all", jobs=8):
     """
     Build LeetCode-project
     """
-
+    # TODO: need to revise on Windows
     build_type = "Debug" if debug else "Release"
 
     CommandExecutor(ctx)\
@@ -74,18 +70,16 @@ def build(ctx, debug=True, target="all", jobs=8):
 
 
 @commandscript.script_task(
-    pre=[setup.setup_context],
     help={
         "debug": 'if set build type will be DEBUG, else RELEASE (by default DEBUG)',
         "target": 'defines regexpr-name of target to launch (by default ".+")',
         "gtest_filter": 'defines regexpr-filter for tests in targets (by default ".+")',
-    },
-)
+    }, )
 def launch(ctx, debug=True, target=".+", gtest_filter="*"):
     """
     Launch targets of LeetCode-project
     """
-
+    # TODO: need to revise on Windows
     build_type = "Debug" if debug else "Release"
     targets_dir = f"{ctx.leet_code_cmake_dir}/.build_{build_type}"
 
@@ -105,25 +99,24 @@ def launch(ctx, debug=True, target=".+", gtest_filter="*"):
 
 
 @commandscript.script_task(
-    pre=[setup.setup_context],
     help={
         "clean": "should clean all temporary files before checking",
         "debug": "if set build type will be DEBUG, else RELEASE (by default DEBUG)",
         "detect_conan_profile": "detect Conan's profile for the fist time (by default False)",
         "target": 'defines regexpr-name of target to launch (by default ".+")',
-    },
-)
+    }, )
 def full_check(ctx, clean=False, debug=True, detect_conan_profile=False, target=".+"):
     """
     Full-check LeetCode-project
     """
+    # TODO: need to revise on Windows
     if clean:
         leet_code.conan.clean(ctx)
         leet_code.clean(ctx)
 
     if detect_conan_profile:
         leet_code.conan.detect_profile(ctx)
-    
+
     leet_code.clang_format(ctx)
     leet_code.conan.install(ctx, debug=debug)
     leet_code.configure(ctx, debug=debug)

@@ -41,25 +41,28 @@ def clean(_ctx):
 
 @commandscript.script_task(
     help={
-        "conanfile_dir": "path to target conanfile.txt",
+        "conanfile-dir": "path to target conanfile.txt",
+        "conanprofile-name": "name of conan-profile file, placed in the same dir with conanfile.txt",
         "project-name": "name project of conan's utilities consuming",
         "debug": "if set configuration type will be DEBUG (else RELEASE)",
     })
-def install(ctx, conanfile_dir: str, project_name: str = None, debug=True):
+def install(ctx, conanfile_dir: str = None, conanprofile_name: str = None, project_name: str = None, debug: bool = True):
     """
     Install dependencies via Conan.
     """
+    assert conanfile_dir
+    assert conanprofile_name
     assert project_name
+
     build_type = "Debug" if debug else "Release"
     return commandscript.ScriptExecutor.from_ctx(ctx)\
         .add_cwd(conanfile_dir)\
         .add_command([
             f'conan install .',
-            f'--profile "{commandscript.ENV_CONTEXT.PROJECT_GIT_DIR.name}/conanprofile.txt"',
+            f'--profile {conanprofile_name}',
             f'--build=missing',
             f'--settings=build_type={build_type}',
             f'--settings=compiler.runtime_type={build_type}',
-            f'--conf tools.cmake.cmaketoolchain:user_presets=False',
             f'--core-conf=core.download:parallel=8',
             f'--core-conf=core.cache:storage_path="{get_cache_dir(build_type)}"',
             f'--output-folder="{get_build_dir(build_type, project_name)}"',

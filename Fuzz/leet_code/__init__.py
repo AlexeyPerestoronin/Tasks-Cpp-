@@ -4,7 +4,6 @@ import invoke
 import platform
 import commandscript
 
-
 current_os = platform.system()
 if current_os == "Windows":
     from . import windows as lc
