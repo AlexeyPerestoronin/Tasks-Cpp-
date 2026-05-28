@@ -1,0 +1,33 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/Fuzz/.venv/bin/python",
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "editor.defaultFormatter": null,
+    "[cpp]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+        "editor.formatOnSave": true
+    },
+    "clangd.arguments": [
+        "-j=8",
+        "--clang-tidy",
+        "--all-scopes-completion",
+        "--completion-style=bundled",
+        "--header-insertion=iwyu",
+        "--header-insertion-decorators",
+        "--compile-commands-dir=${workspaceFolder}/.artifacts/.build_LeetCode_Debug",
+    ],
+    // C++ TestMake
+    "testMate.cpp.debug.configTemplate": "name:debug unit-test",
+    "testMate.cpp.test.advancedExecutables": [
+        {
+            "pattern": "**/.build_LeetCode_Debug/*",
+            "cwd": "${workspaceFolder}/.artifacts/.build_LeetCode_Debug",
+        }
+    ],
+    "cSpell.words": [
+        "cmaketoolchain",
+        "COMMANDSCRIPT",
+        "conanfile",
+        "conanprofile",
+        "DCMAKE"
+    ]
+}
