@@ -28,6 +28,8 @@
         "COMMANDSCRIPT",
         "conanfile",
         "conanprofile",
-        "DCMAKE"
+        "DCMAKE",
+        "endforeach",
+        "endfunction"
     ]
 }

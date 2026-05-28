@@ -1,4 +1,4 @@
-include("$ENV{LEET_CODE_DIR}/cmake/FindAllSourceFiles.cmake")
+include("$ENV{PROJECT_GIT_DIR}/cmake/FindAllSourceFiles.cmake")
 
 find_package(GTest REQUIRED)
 
@@ -19,8 +19,6 @@ function(AddSuitTest i_targetTestFile)
         ${gtest_SOURCE_DIR}/include
         ${gmock_SOURCE_DIR}/include)
     target_link_libraries(${suitTestExeName} PRIVATE gtest::gtest)
-    # target_link_libraries(${suitTestExeName} GTest::gtest_main)
-    # target_link_libraries(${suitTestExeName} GTest::gmock_main)
 
     message("[add suit-test: ${i_targetTestFile}] end")
 endfunction(AddSuitTest)
