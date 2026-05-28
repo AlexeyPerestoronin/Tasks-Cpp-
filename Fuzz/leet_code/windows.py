@@ -5,36 +5,6 @@ import shutil
 import invoke
 import commandscript
 
-
-@commandscript.script_task(pre=[setup.setup_context])
-def clang_format(ctx):
-    """
-    Format h/cpp files in LeetCode 
-    """
-
-    def collect_file(dir):
-        files = []
-        for item in os.listdir(f"{dir}"):
-            item = Path(os.path.join(f"{dir}", item))
-            if item.is_file():
-                if item.name.endswith('.h') or item.name.endswith('.cpp'):
-                    files.append(f'"{item.as_posix()}"')
-            if item.is_dir():
-                files.extend(collect_file(f"{item}"))
-        return files
-
-    CommandExecutor(ctx)\
-        .add_command([
-                "clang-format",
-                f'-i',
-                f'--verbose',
-                f'--style="file:{ctx.git_dir}/.clang-format"',
-                *collect_file(f'{ctx.leet_code_dir}/src'),
-            ]
-        )\
-        .execute(log="leet_code.clang-format.log")
-
-
 @commandscript.script_task(pre=[setup.setup_context])
 def clean(ctx):
     """

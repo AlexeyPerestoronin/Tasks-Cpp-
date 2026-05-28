@@ -6,14 +6,6 @@ import commandscript
 
 
 @commandscript.script_task()
-def clang_format(ctx):
-    """
-    Format h/cpp files in LeetCode 
-    """
-    pass
-
-
-@commandscript.script_task()
 def clean(ctx):
     """
     Clean Conan's data for LeetCode
