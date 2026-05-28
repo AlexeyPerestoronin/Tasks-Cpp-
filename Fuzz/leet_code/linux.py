@@ -8,6 +8,10 @@ import conan_task
 
 PROJECT_NAME = 'LeetCode'
 
+def get_project_build_dir(debug=True):
+    build_type = "Debug" if debug else "Release"
+    return f"{commandscript.ENV_CONTEXT.PROJECT_ARTIFACTS_DIR.name}/.build_{PROJECT_NAME}_{build_type}"
+
 
 @commandscript.script_task()
 def clean(ctx):
@@ -45,22 +49,26 @@ def configure(ctx, conan=False, debug=True):
                 f'-DCMAKE_TOOLCHAIN_FILE="{conan_task.get_toolchain_file_path(build_type, PROJECT_NAME)}"',
                 f'-GNinja',
                 f'-S "{commandscript.ENV_CONTEXT.LEET_CODE_DIR}"',
-                f'-B f"{commandscript.ENV_CONTEXT.PROJECT_ARTIFACTS_DIR.name}/.build_{PROJECT_NAME}_{build_type}"',
+                f'-B "{get_project_build_dir(build_type)}"',
             ])\
         .execute(log="leet-code.configure.log")
 
 
 @commandscript.script_task(
     help={
-        "debug": "if set build type will be DEBUG, else RELEASE (by default DEBUG)",
-        "target": "defines name of target to build (by default ALL)",
-        "jobs": "defines count parallel buildings (by default 8)",
+        "debug": "if set build type will be DEBUG, else RELEASE (by default: TRUE)",
+        "target": "defines name of target to build (by default: ALL)",
+        "jobs": "defines count parallel buildings (by default: 8)",
     }, )
 def build(ctx, debug=True, target="all", jobs=8):
     """
     Build LeetCode-project
     """
-    pass
+    commandscript.ScriptExecutor.from_ctx(ctx)\
+        .add_cwd(f"{get_project_build_dir(debug)}")\
+        .add_command([f'ninja -j {jobs} {target}'])\
+        .add_command([f"ninja -t compdb > compile_commands.json"])\
+        .execute(log="leet-code.build.log")
 
 
 @commandscript.script_task(
