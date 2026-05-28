@@ -1,7 +1,25 @@
 include("$ENV{PROJECT_GIT_DIR}/cmake/AddSuitTests.cmake")
+
 AddSuitTests(
-    SOURCE_DIR "$CMAKE_CURRENT_SOURCE_DIR/Easy"
-    COMMON_FILES "main.cpp" "support.h"
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Easy"
+    COMMON_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp" 
+        "${CMAKE_CURRENT_SOURCE_DIR}/support.h"
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}"
 )
-AddSuitTests("$CMAKE_CURRENT_SOURCE_DIR/Medium")
-AddSuitTests("$CMAKE_CURRENT_SOURCE_DIR/Hard")
+
+AddSuitTests(
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Medium"
+    COMMON_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp" 
+        "${CMAKE_CURRENT_SOURCE_DIR}/support.h"
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+AddSuitTests(
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Hard"
+    COMMON_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp" 
+        "${CMAKE_CURRENT_SOURCE_DIR}/support.h"
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}"
+)

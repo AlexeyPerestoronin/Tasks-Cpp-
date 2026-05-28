@@ -1,44 +1,60 @@
+include(CMakeParseArguments)
 include("$ENV{PROJECT_GIT_DIR}/cmake/FindAllSourceFiles.cmake")
 
 find_package(GTest REQUIRED)
 
-# brief: creates suit tests
-# param: i_targetTestFile - target file for new suit-test
-function(AddSuitTest i_targetTestFile)
-    message("[add suit-test: ${i_targetTestFile}] begin")
+function(AddSuitTest)
+    set(options "")
+    set(oneValueArgs TARGET_FILE)
+    set(multiValueArgs COMMON_FILES INCLUDE_DIRS)
+    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    get_filename_component(fileNameWithoutExtension ${i_targetTestFile} NAME_WE)
+    message("[add suit-test: ${ARG_TARGET_FILE}] begin")
+
+    get_filename_component(fileNameWithoutExtension ${ARG_TARGET_FILE} NAME_WE)
     set(suitTestExeName ${fileNameWithoutExtension})
+
     add_executable(${suitTestExeName}
-        "$ENV{LEET_CODE_DIR}/src/main.cpp"
-        ${i_targetTestFile})
+        ${ARG_TARGET_FILE}
+        ${ARG_COMMON_FILES}
+    )
+
     target_include_directories(${suitTestExeName}
         PRIVATE
-        "$ENV{LEET_CODE_DIR}/src"
-        # GTest
+        ${ARG_INCLUDE_DIRS}
         ${gtest_SOURCE_DIR}/include
-        ${gmock_SOURCE_DIR}/include)
+        ${gmock_SOURCE_DIR}/include
+    )
+
     target_link_libraries(${suitTestExeName} PRIVATE gtest::gtest)
 
-    message("[add suit-test: ${i_targetTestFile}] end")
-endfunction(AddSuitTest)
+    message("[add suit-test: ${ARG_TARGET_FILE}] end")
+endfunction()
 
 
-# brief: creates suit tests
-# note1: one suit test is creates from one code file and presents as unique project
-# param: i_testsSource - name of dirrectory with tests
-function(AddSuitTests i_testsSource)
+function(AddSuitTests)
+    set(options "")
+    set(oneValueArgs SOURCE_DIR)
+    set(multiValueArgs COMMON_FILES INCLUDE_DIRS)
+    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
     message("[AddSuitTests] begin")
 
-    file(GLOB_RECURSE sources_list "${i_testsSource}/*")
+    # Ищем все файлы в указанной директории SOURCE_DIR
+    file(GLOB_RECURSE sources_list "${ARG_SOURCE_DIR}/*")
+    
     foreach(source ${sources_list})
         if(NOT IS_DIRECTORY ${source})
             get_filename_component(sourceExt ${source} EXT)
             if(${sourceExt} STREQUAL ".cpp")
-                AddSuitTest(${source})
+                AddSuitTest(
+                    TARGET_FILE ${source}
+                    COMMON_FILES ${ARG_COMMON_FILES}
+                    INCLUDE_DIRS ${ARG_INCLUDE_DIRS}
+                )
             endif()
         endif()
     endforeach()
 
     message("[AddSuitTests] end")
-endfunction(AddSuitTests)
+endfunction()
