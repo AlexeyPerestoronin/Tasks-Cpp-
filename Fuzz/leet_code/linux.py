@@ -2,15 +2,19 @@ import os
 import re
 import shutil
 import invoke
+import pathlib
 import commandscript
 
 import conan_task
 
 PROJECT_NAME = 'LeetCode'
 
-def get_project_build_dir(debug=True):
+def get_project_build_dir(debug=True, hold=True):
     build_type = "Debug" if debug else "Release"
-    return f"{commandscript.ENV_CONTEXT.PROJECT_ARTIFACTS_DIR.name}/.build_{PROJECT_NAME}_{build_type}"
+    if hold:
+        return f"{commandscript.ENV_CONTEXT.PROJECT_ARTIFACTS_DIR.name}/.build_{PROJECT_NAME}_{build_type}"
+    else:
+        return f"{commandscript.ENV_CONTEXT.PROJECT_ARTIFACTS_DIR.exp}/.build_{PROJECT_NAME}_{build_type}"
 
 
 @commandscript.script_task()
@@ -65,7 +69,7 @@ def build(ctx, debug=True, target="all", jobs=8):
     Build LeetCode-project
     """
     commandscript.ScriptExecutor.from_ctx(ctx)\
-        .add_cwd(f"{get_project_build_dir(debug)}")\
+        .add_cwd(get_project_build_dir(debug))\
         .add_command([f'ninja -j {jobs} {target}'])\
         .add_command([f"ninja -t compdb > compile_commands.json"])\
         .execute(log="leet-code.build.log")
@@ -81,7 +85,19 @@ def launch(ctx, debug=True, target=".+", gtest_filter="*"):
     """
     Launch targets of LeetCode-project
     """
-    pass
+    build_dir = pathlib.Path(get_project_build_dir(debug, False))
+    commands = []
+    for item in os.listdir(build_dir):
+        item =  build_dir / item
+        if item.is_file():
+            if re.match(target, item.name):
+                commandscript.info.log_line(f'detected by "{target}": {item.name}')
+                commands.append([f'./{item.name} --gtest_filter="{gtest_filter}"'])
+
+    commandscript.ScriptExecutor.from_ctx(ctx)\
+        .add_cwd(get_project_build_dir(debug))\
+        .add_commands(commands)\
+        .execute("leet-code.launch.log")
 
 
 @commandscript.script_task(
@@ -95,4 +111,4 @@ def full_check(ctx, clean=False, debug=True, detect_conan_profile=False, target=
     """
     Full-check LeetCode-project
     """
-    pass
+    raise RuntimeError('not implemented!')
