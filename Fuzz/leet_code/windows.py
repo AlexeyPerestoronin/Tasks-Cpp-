@@ -1,0 +1,161 @@
+import os
+import re
+import setup
+import shutil
+import invoke
+import commandscript
+
+
+@commandscript.script_task(pre=[setup.setup_context])
+def clang_format(ctx):
+    """
+    Format h/cpp files in LeetCode 
+    """
+
+    def collect_file(dir):
+        files = []
+        for item in os.listdir(f"{dir}"):
+            item = Path(os.path.join(f"{dir}", item))
+            if item.is_file():
+                if item.name.endswith('.h') or item.name.endswith('.cpp'):
+                    files.append(f'"{item.as_posix()}"')
+            if item.is_dir():
+                files.extend(collect_file(f"{item}"))
+        return files
+
+    CommandExecutor(ctx)\
+        .add_command([
+                "clang-format",
+                f'-i',
+                f'--verbose',
+                f'--style="file:{ctx.git_dir}/.clang-format"',
+                *collect_file(f'{ctx.leet_code_dir}/src'),
+            ]
+        )\
+        .execute(log="leet_code.clang-format.log")
+
+
+@commandscript.script_task(pre=[setup.setup_context])
+def clean(ctx):
+    """
+    Clean Conan's data for LeetCode
+    """
+    for item in os.listdir(f"{ctx.leet_code_cmake_dir}"):
+        item = Path(os.path.join(f"{ctx.leet_code_cmake_dir}", item))
+        if item.is_dir():
+            if item.name.startswith('.cache'):
+                shutil.rmtree(item)
+                INFO.log_line(f"remove CMake cache dir: {item}")
+            elif item.name.startswith('.build'):
+                shutil.rmtree(item)
+                INFO.log_line(f"remove CMake build dir: {item}")
+
+
+@commandscript.script_task(
+    pre=[setup.setup_context],
+    help={
+        "debug": "if set configuration type will be DEBUG (else RELEASE)",
+    },
+)
+def configure(ctx, debug=True):
+    """
+    Configure LeetCode-project
+    """
+
+    build_type = "Debug" if debug else "Release"
+
+    CommandExecutor(ctx)\
+        .add_command([
+                f'cmake',
+                f'-DCMAKE_CXX_COMPILER=clang-cl.exe',
+                f'-DCMAKE_C_COMPILER=clang-cl.exe',
+                f'-DCMAKE_BUILD_TYPE={build_type}',
+                f'-GNinja',
+                f'-DCMAKE_TOOLCHAIN_FILE="{ctx.leet_code_conan_dir}/.build_{build_type}/build/{build_type}/generators/conan_toolchain.cmake"',
+                f'-S "{ctx.leet_code_dir}"',
+                f'-B "{ctx.leet_code_cmake_dir}/.build_{build_type}"',
+            ])\
+        .execute(log="leet_code.configure.log")
+
+
+@commandscript.script_task(
+    pre=[setup.setup_context],
+    help={
+        "debug": "if set build type will be DEBUG, else RELEASE (by default DEBUG)",
+        "target": "defines name of target to build (by default ALL)",
+        "jobs": "defines count parallel buildings (by default 8)",
+    },
+)
+def build(ctx, debug=True, target="all", jobs=8):
+    """
+    Build LeetCode-project
+    """
+
+    build_type = "Debug" if debug else "Release"
+
+    CommandExecutor(ctx)\
+        .add_cwd(f"{ctx.leet_code_cmake_dir}/.build_{build_type}")\
+        .add_command([
+            f'ninja',
+            f'-j {jobs}',
+            f'{target}',
+        ], enter=False)\
+        .execute(log="leet_code.build.log")
+
+
+@commandscript.script_task(
+    pre=[setup.setup_context],
+    help={
+        "debug": 'if set build type will be DEBUG, else RELEASE (by default DEBUG)',
+        "target": 'defines regexpr-name of target to launch (by default ".+")',
+        "gtest_filter": 'defines regexpr-filter for tests in targets (by default ".+")',
+    },
+)
+def launch(ctx, debug=True, target=".+", gtest_filter="*"):
+    """
+    Launch targets of LeetCode-project
+    """
+
+    build_type = "Debug" if debug else "Release"
+    targets_dir = f"{ctx.leet_code_cmake_dir}/.build_{build_type}"
+
+    commands = []
+    for item in os.listdir(f"{targets_dir}"):
+        item = Path(os.path.join(f"{targets_dir}", item))
+        if item.is_file():
+            if item.name.endswith('.exe'):
+                if re.match(target, item.name):
+                    INFO.log_line(f'detected by "{target}": {item.name}')
+                    commands.append([f'{item.name} --gtest_filter="{gtest_filter}"'])
+
+    CommandExecutor(ctx)\
+        .add_cwd(f"{targets_dir}")\
+        .add_commands(commands)\
+        .execute("leet_code.launch.log")
+
+
+@commandscript.script_task(
+    pre=[setup.setup_context],
+    help={
+        "clean": "should clean all temporary files before checking",
+        "debug": "if set build type will be DEBUG, else RELEASE (by default DEBUG)",
+        "detect_conan_profile": "detect Conan's profile for the fist time (by default False)",
+        "target": 'defines regexpr-name of target to launch (by default ".+")',
+    },
+)
+def full_check(ctx, clean=False, debug=True, detect_conan_profile=False, target=".+"):
+    """
+    Full-check LeetCode-project
+    """
+    if clean:
+        leet_code.conan.clean(ctx)
+        leet_code.clean(ctx)
+
+    if detect_conan_profile:
+        leet_code.conan.detect_profile(ctx)
+    
+    leet_code.clang_format(ctx)
+    leet_code.conan.install(ctx, debug=debug)
+    leet_code.configure(ctx, debug=debug)
+    leet_code.build(ctx, debug=debug)
+    leet_code.launch(ctx, debug=debug, target=target)

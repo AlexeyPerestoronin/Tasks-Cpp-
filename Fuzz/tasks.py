@@ -1,63 +1,63 @@
-import os
-from pathlib import Path
-from invoke import task, Collection
-
-import setup
-from utils.logger import INFO
-from utils.command_executor import CommandExecutor
+import pathlib
+import invoke
+import commandscript
 
 
-@task(pre=[setup.setup_context])
+commandscript.ENV_CONTEXT\
+    .add_env_var('PROJECT_GIT_DIR', str(pathlib.Path(f'{__file__}').parent.parent))\
+    .add_env_var('PROJECT_FUZZ_DIR', '${PROJECT_GIT_DIR}/Fuzz')\
+    .add_env_var('COMMANDSCRIPT_SCRIPT_DIR', '${PROJECT_FUZZ_DIR}/.generated')\
+    .add_env_var('PROJECT_ARTIFACTS_DIR', '${PROJECT_GIT_DIR}/.artifacts')
+
+
+@commandscript.script_task()
 def get_info(ctx):
     """
-    Print to console information about active configuration of invoke-tasks
+    Print to console information about active configuration of commandcript-tasks
     """
-    env_context = setup.get_env_context()
+    names = [value.name for value in commandscript.ENV_CONTEXT.values()]
+    hold_values = [value.hld for value in commandscript.ENV_CONTEXT.values()]
+    expanded_values = [value.exp for value in commandscript.ENV_CONTEXT.values()]
+    width = max(max(len(key) for key in names), max(len(item) for item in hold_values), max(len(item) for item in expanded_values), 25)
+    commandscript.info.log_line("Active environment configuration:")
+    commandscript.info.log_line(f"| {'Env-var name':<{width}} | {'Env-var hold-value':<{width}} | {'Env-var expanded-value':<{width}} |")
+    commandscript.info.log_line(f"|-{'-' * width}-|-{'-' * width}-|-{'-' * width}-|")
+    for i in range(len(names)):
+        key = names[i]
+        hold_value = hold_values[i]
+        expanded_value = expanded_values[i]
+        if expanded_value == hold_value:
+            expanded_value = '-'
+        commandscript.info.log_line(f"| {key:<{width}} | {hold_value:<{width}} | {expanded_value:<{width}} |")
 
-    # Define custom formatters for string columns
-    formatters = {}
-    for col in env_context.select_dtypes(include='object').columns:
-        max_len = env_context[col].astype(str).str.len().max()
-        formatters[col] = lambda x, length=max_len: f"  {x:<{length}s}"
 
-    INFO.log_line("Active environment configuration:") \
-        .log_line(f"{env_context.to_string(formatters=formatters, index=False)}")
-
-
-@task(pre=[setup.setup_context])
+@commandscript.script_task()
 def yapf(ctx):
     """
     Format python files in Fuzz
     """
-
-    def collect_file(dir):
-        files = []
-        for item in os.listdir(dir):
-            item = Path(os.path.join(f'{dir}', item))
-            if item.is_file():
-                if item.name.endswith('.py'):
-                    files.append(f'"{item.as_posix()}"')
-            elif item.is_dir():
-                if not item.name.startswith('.'):
-                    files.extend(collect_file(f'{item.as_posix()}'))
-        return files
-
-    CommandExecutor(ctx)\
-        .add_cwd(f"{ctx.fuzz_dir}")\
+    commandscript.ScriptExecutor.from_ctx(ctx)\
+        .add_cwd(commandscript.ENV_CONTEXT.PROJECT_FUZZ_DIR)\
         .add_command([
-                "yapf",
-                "--style .style.yapf",
-                "--verbose",
-                "--in-place",
-                *collect_file(f"{ctx.fuzz_dir}")
+                'yapf',
+                f'--style "{commandscript.ENV_CONTEXT.PROJECT_GIT_DIR}/.style.yapf"',
+                '--verbose',
+                '--recursive',
+                '--in-place',
+                '--parallel',
+                f"--exclude '**.venv**'",
+                f"{commandscript.ENV_CONTEXT.PROJECT_FUZZ_DIR}",
             ])\
         .execute(log="yapf.log")
 
 
-namespace = Collection()
+# yapf: disable
+namespace = invoke.Collection()
 namespace.add_task(get_info, name="get-info")
 namespace.add_task(yapf, name="yapf")
 
-import leet_code
+import conan_task
+namespace.add_collection(conan_task.collection, name='conan')
 
-namespace.add_collection(leet_code.collection)
+import leet_code
+namespace.add_collection(leet_code.collection, name='leet-code')
