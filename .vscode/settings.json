@@ -13,14 +13,14 @@
         "--completion-style=bundled",
         "--header-insertion=iwyu",
         "--header-insertion-decorators",
-        "--compile-commands-dir=${workspaceFolder}/.artifacts/.build_LeetCode_Debug",
+        "--compile-commands-dir=${workspaceFolder}/.artifacts/.build_CppDetails_Debug",
     ],
     // C++ TestMake
     "testMate.cpp.debug.configTemplate": "name:debug unit-test",
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "**/.build_LeetCode_Debug/*",
-            "cwd": "${workspaceFolder}/.artifacts/.build_LeetCode_Debug",
+            "pattern": "**/.build_CppDetails_Debug/*",
+            "cwd": "${workspaceFolder}/.artifacts/.build_CppDetails_Debug",
         }
     ],
     "cSpell.words": [
