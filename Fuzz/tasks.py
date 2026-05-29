@@ -8,13 +8,15 @@ commandscript.ENV_CONTEXT\
     .add_env_var('PROJECT_FUZZ_DIR', '${PROJECT_GIT_DIR}/Fuzz')\
     .add_env_var('COMMANDSCRIPT_SCRIPT_DIR', '${PROJECT_GIT_DIR}/.generated')\
     .add_env_var('PROJECT_ARTIFACTS_DIR', '${PROJECT_GIT_DIR}/.artifacts')\
-    .add_env_var('LEET_CODE_DIR', '${PROJECT_GIT_DIR}/LeetCode')
+    .add_env_var('CONAN_PROFILES_DIR', '${PROJECT_GIT_DIR}/conan')\
+    .add_env_var('LEET_CODE_DIR', '${PROJECT_GIT_DIR}/LeetCode')\
+    .add_env_var('CPP_DETAILS_DIR', '${PROJECT_GIT_DIR}/CppDetails')
 
 
 @commandscript.script_task()
 def get_info(ctx):
     """
-    Print to console information about active configuration of commandcript-tasks
+    Print to console information about active configuration of commandsript-tasks
     """
     names = [value.name for value in commandscript.ENV_CONTEXT.values()]
     hold_values = [value.hld for value in commandscript.ENV_CONTEXT.values()]
@@ -32,33 +34,21 @@ def get_info(ctx):
         commandscript.info.log_line(f"| {key:<{width}} | {hold_value:<{width}} | {expanded_value:<{width}} |")
 
 
-@commandscript.script_task()
-def yapf(ctx):
-    """
-    Format python files in Fuzz
-    """
-    commandscript.ScriptExecutor.from_ctx(ctx)\
-        .add_cwd(commandscript.ENV_CONTEXT.PROJECT_FUZZ_DIR)\
-        .add_command([
-                'yapf',
-                f'--style "{commandscript.ENV_CONTEXT.PROJECT_GIT_DIR}/.style.yapf"',
-                '--verbose',
-                '--recursive',
-                '--in-place',
-                '--parallel',
-                f"--exclude '**.venv**'",
-                f"{commandscript.ENV_CONTEXT.PROJECT_FUZZ_DIR}",
-            ])\
-        .execute(log="yapf.log")
-
-
-# yapf: disable
 namespace = invoke.Collection()
 namespace.add_task(get_info, name="get-info")
-namespace.add_task(yapf, name="yapf")
+
+import code_utils
+
+namespace.add_collection(code_utils.collection, name='code-utils')
 
 import conan_task
+
 namespace.add_collection(conan_task.collection, name='conan')
 
 import leet_code
+
 namespace.add_collection(leet_code.collection, name='leet-code')
+
+import cpp_details
+
+namespace.add_collection(cpp_details.collection, name='cpp-details')

@@ -1,24 +1,6 @@
 import os
 import re
-import shutil
 import commandscript
-
-
-@commandscript.script_task()
-def clean(ctx):
-    """
-    Clean Conan's data for LeetCode
-    """
-    # TODO: need to revise on Windows
-    for item in os.listdir(f"{ctx.leet_code_cmake_dir}"):
-        item = Path(os.path.join(f"{ctx.leet_code_cmake_dir}", item))
-        if item.is_dir():
-            if item.name.startswith('.cache'):
-                shutil.rmtree(item)
-                INFO.log_line(f"remove CMake cache dir: {item}")
-            elif item.name.startswith('.build'):
-                shutil.rmtree(item)
-                INFO.log_line(f"remove CMake build dir: {item}")
 
 
 @commandscript.script_task(
@@ -96,29 +78,3 @@ def launch(ctx, debug=True, target=".+", gtest_filter="*"):
         .add_cwd(f"{targets_dir}")\
         .add_commands(commands)\
         .execute("leet_code.launch.log")
-
-
-@commandscript.script_task(
-    help={
-        "clean": "should clean all temporary files before checking",
-        "debug": "if set build type will be DEBUG, else RELEASE (by default DEBUG)",
-        "detect_conan_profile": "detect Conan's profile for the fist time (by default False)",
-        "target": 'defines regexpr-name of target to launch (by default ".+")',
-    }, )
-def full_check(ctx, clean=False, debug=True, detect_conan_profile=False, target=".+"):
-    """
-    Full-check LeetCode-project
-    """
-    # TODO: need to revise on Windows
-    if clean:
-        leet_code.conan.clean(ctx)
-        leet_code.clean(ctx)
-
-    if detect_conan_profile:
-        leet_code.conan.detect_profile(ctx)
-
-    leet_code.clang_format(ctx)
-    leet_code.conan.install(ctx, debug=debug)
-    leet_code.configure(ctx, debug=debug)
-    leet_code.build(ctx, debug=debug)
-    leet_code.launch(ctx, debug=debug, target=target)

@@ -42,16 +42,16 @@ def clean(_ctx):
 @commandscript.script_task(
     help={
         "conanfile-dir": "path to target conanfile.txt",
-        "conanprofile-name": "name of conan-profile file, placed in the same dir with conanfile.txt",
+        "profile_path": "path to conan-profile file",
         "project-name": "name project of conan's utilities consuming",
         "debug": "if set configuration type will be DEBUG (else RELEASE)",
     })
-def install(ctx, conanfile_dir: str = None, conanprofile_name: str = None, project_name: str = None, debug: bool = True):
+def install(ctx, conanfile_dir: str = None, profile_path: str = None, project_name: str = None, debug: bool = True):
     """
     Install dependencies via Conan.
     """
     assert conanfile_dir
-    assert conanprofile_name
+    assert profile_path
     assert project_name
 
     build_type = "Debug" if debug else "Release"
@@ -59,7 +59,7 @@ def install(ctx, conanfile_dir: str = None, conanprofile_name: str = None, proje
         .add_cwd(conanfile_dir)\
         .add_command([
             f'conan install .',
-            f'--profile {conanprofile_name}',
+            f'--profile {profile_path}',
             f'--build=missing',
             f'--settings=build_type={build_type}',
             f'--settings=compiler.runtime_type={build_type}',

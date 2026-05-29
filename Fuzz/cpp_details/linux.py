@@ -1,11 +1,13 @@
 import os
 import re
+import shutil
+import invoke
 import pathlib
 import commandscript
 
 import conan_task
 
-PROJECT_NAME = 'LeetCode'
+PROJECT_NAME = 'CppDetails'
 
 
 def get_project_build_dir(debug=True, hold=True):
@@ -43,10 +45,10 @@ def configure(ctx, conan=False, debug=True):
                 f'-DCMAKE_BUILD_TYPE={build_type}',
                 f'-DCMAKE_TOOLCHAIN_FILE="{conan_task.get_toolchain_file_path(build_type, PROJECT_NAME)}"',
                 f'-GNinja',
-                f'-S "{commandscript.ENV_CONTEXT.LEET_CODE_DIR.name}"',
+                f'-S "{commandscript.ENV_CONTEXT.CPP_DETAILS_DIR.name}"',
                 f'-B "{get_project_build_dir(build_type)}"',
             ])\
-        .execute(log="leet-code.configure.log")
+        .execute(log="cpp-details.configure.log")
 
 
 @commandscript.script_task(
@@ -57,35 +59,10 @@ def configure(ctx, conan=False, debug=True):
     }, )
 def build(ctx, debug=True, target="all", jobs=8):
     """
-    Build LeetCode-project
+    Build CppDetails-project
     """
     commandscript.ScriptExecutor.from_ctx(ctx)\
         .add_cwd(get_project_build_dir(debug))\
         .add_command([f'ninja -j {jobs} {target}'])\
         .add_command([f"ninja -t compdb > compile_commands.json"])\
-        .execute(log="leet-code.build.log")
-
-
-@commandscript.script_task(
-    help={
-        "debug": 'if set build type will be DEBUG, else RELEASE (by default DEBUG)',
-        "target": 'defines regexpr-name of target to launch (by default ".+")',
-        "gtest_filter": 'defines regexpr-filter for tests in targets (by default ".+")',
-    }, )
-def launch(ctx, debug=True, target=".+", gtest_filter="*"):
-    """
-    Launch targets of LeetCode-project
-    """
-    build_dir = pathlib.Path(get_project_build_dir(debug, False))
-    commands = []
-    for item in os.listdir(build_dir):
-        item = build_dir / item
-        if item.is_file():
-            if re.match(target, item.name):
-                commandscript.info.log_line(f'detected by "{target}": {item.name}')
-                commands.append([f'./{item.name} --gtest_filter="{gtest_filter}"'])
-
-    commandscript.ScriptExecutor.from_ctx(ctx)\
-        .add_cwd(get_project_build_dir(debug))\
-        .add_commands(commands)\
-        .execute("leet-code.launch.log")
+        .execute(log="cpp-details.build.log")
